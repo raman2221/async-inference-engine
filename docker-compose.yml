@@ -1,0 +1,82 @@
+# Full pipeline: client -> gateway (TS) -> RabbitMQ -> worker (Python) -> Redis
+#                                                     -> notifier (C#) -> client
+#
+#   docker compose up --build                 # start everything
+#   docker compose run --rm loadtest --rps 2000 --duration 30
+#
+# Knobs (env vars or a .env file): MAX_BATCH_SIZE, MAX_WAIT_MS, MODEL_BACKEND,
+# WORKER_REPLICAS, TORCH_THREADS.
+
+x-common-env: &common-env
+  RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+  REDIS_URL: redis://redis:6379
+  QUEUE_NAME: inference.requests
+  QUEUE_MAX_LENGTH: "100000"
+  JOB_TTL_SECONDS: "3600"
+
+services:
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    ports:
+      - "5672:5672"
+      - "15672:15672" # management UI: http://localhost:15672 (guest/guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  gateway:
+    build: ./gateway
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *common-env
+      NOTIFIER_PUBLIC_URL: ws://localhost:8081
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  worker:
+    build: ./worker
+    environment:
+      <<: *common-env
+      MAX_BATCH_SIZE: ${MAX_BATCH_SIZE:-16}
+      MAX_WAIT_MS: ${MAX_WAIT_MS:-50}
+      MODEL_BACKEND: ${MODEL_BACKEND:-hf}
+      TORCH_THREADS: ${TORCH_THREADS:-4}
+    deploy:
+      replicas: ${WORKER_REPLICAS:-1}
+    depends_on:
+      rabbitmq: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  notifier:
+    build: ./notifier
+    ports:
+      - "8081:8081"
+    environment:
+      REDIS_URL: redis:6379
+    depends_on:
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  # Not started by `up`; run on demand with `docker compose run --rm loadtest ...`
+  loadtest:
+    build: ./loadtest
+    profiles: ["tools"]
+    command: ["--url", "http://gateway:8080", "--rps", "500", "--duration", "10"]
+    volumes:
+      - ./results:/results
