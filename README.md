@@ -158,3 +158,7 @@ docker build loadtest                                         # 13 C++ tests run
 ```
 
 Code style and the cross-service naming contract are described in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE)
