@@ -157,4 +157,4 @@ cd notifier && dotnet test                                    # 16 tests (xUnit,
 docker build loadtest                                         # 13 C++ tests run during the image build
 ```
 
-Code style follows [docs/clean-code-rules.md](docs/clean-code-rules.md); see [CLAUDE.md](CLAUDE.md).
+Code style and the cross-service naming contract are described in [CONTRIBUTING.md](CONTRIBUTING.md).

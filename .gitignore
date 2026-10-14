@@ -9,3 +9,9 @@ obj/
 build/
 .env
 results/
+
+# Local-only notes and study material
+CLAUDE.md
+.claude/
+docs/clean-code-rules.md
+docs/CODE_GUIDE.*
