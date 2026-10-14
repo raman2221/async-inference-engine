@@ -15,3 +15,4 @@ CLAUDE.md
 .claude/
 docs/clean-code-rules.md
 docs/CODE_GUIDE.*
+.vscode/
