@@ -1,0 +1,1 @@
+{"rps_target":150,"duration_s":30,"sent":4500,"achieved_rps":150.02,"accepted":4500,"rejected_503":0,"errors":0,"success_pct":100,"ingress_p50_ms":2.02743,"ingress_p99_ms":2.85343,"completed":1500,"e2e_p50_ms":15693,"e2e_p90_ms":27734,"e2e_p99_ms":30271,"e2e_mean_ms":15589.3,"inference_p50_ms":12}

@@ -91,9 +91,44 @@ Set in the shell or a `.env` file (see `.env.example`):
 # Stress the ingress path
 docker compose --profile tools run --rm loadtest --url http://gateway:8080 --rps 2000 --duration 30
 
-# Batching vs. no batching under the same load
-bash scripts/benchmark.sh 150 30 1 16
+# Compare batching configs (MAX_BATCH_SIZE:MAX_WAIT_MS) under the same load
+bash scripts/benchmark.sh 150 30 1:0 16:50 16:0
 ```
+
+## Results
+
+Measured on one Windows 11 PC (Docker Desktop, 24 logical CPUs, CPU-only PyTorch with 4 threads, one
+worker). Raw output in [docs/benchmarks/](docs/benchmarks/). End-to-end latency = gateway accepted the
+job → result written to Redis, from 1,500 jobs sampled evenly across each 30 s run.
+
+**Ingress, 2,000 req/s for 30 s (worker running):** 60,000 / 60,000 accepted (100%), gateway latency
+p50 1.5 ms, p99 4.7 ms. Separately, 5,000 req/s for 15 s was also 100% accepted (p99 6 ms). The gateway
+stays fast because it never waits for the model; RabbitMQ holds the backlog.
+
+**Batching, end-to-end latency (ms):**
+
+| Offered load | Config | p50 | p90 | p99 | Model compute per job |
+|---|---|---|---|---|---|
+| 60 req/s | no batching (`1:0`) | 13 | 25 | 151 | 12.7 ms |
+| 60 req/s | batch 16, 50 ms window (`16:50`) | 70 | 103 | 122 | 6.0 ms |
+| 60 req/s | batch 16, no wait (`16:0`) | 13 | 16 | **28** | 12.2 ms |
+| 150 req/s | no batching | 15,693 | 27,734 | 30,271 | 12.6 ms |
+| 150 req/s | batch 16, 50 ms window | 140 | 251 | 416 | **5.2 ms** |
+| 150 req/s | batch 16, no wait | **49** | **103** | **234** | 6.4 ms |
+
+What the numbers say:
+
+- **Unbatched, one worker tops out near 80 req/s** (12.6 ms per inference). At 150 req/s its queue grows
+  for the whole run and latency climbs to 30 s. Batching serves the same load with p99 under 0.5 s.
+- **Batching cuts model compute per request by 59%** (12.6 → 5.2 ms) because one forward pass over 16
+  padded inputs costs far less than 16 passes over 1.
+- **A fixed wait window hurts at light load.** At 60 req/s the 50 ms window adds ~57 ms to the median
+  while waiting for requests that aren't coming.
+- **`MAX_WAIT_MS=0` (greedy) was best at both loads:** it runs immediately with whatever queued up during
+  the previous forward pass, so batches stay small when traffic is light (median unchanged, p99 −81%) and
+  grow when traffic is heavy.
+- Latency near capacity is noisy: an earlier unbatched run at 60 req/s measured p99 1,231 ms vs 151 ms
+  here. Repeat runs before quoting a single number.
 
 ## Design decisions
 
@@ -116,7 +151,10 @@ bash scripts/benchmark.sh 150 30 1 16
 ## Tests
 
 ```bash
-cd gateway  && npm install && npm test                              # 5 tests (Vitest, app.inject)
-cd worker   && pip install -r requirements-dev.txt && pytest        # 11 tests (batcher + processor)
-cd notifier && dotnet test                                          # 7 tests (xUnit)
+cd gateway  && npm install && npm test                        # 15 tests (Vitest, app.inject with fakes)
+cd worker   && pip install -r requirements-dev.txt && pytest  # 22 tests (batcher, processor, jobs, worker)
+cd notifier && dotnet test                                    # 16 tests (xUnit, in-memory WebSocket server)
+docker build loadtest                                         # 13 C++ tests run during the image build
 ```
+
+Code style follows [docs/clean-code-rules.md](docs/clean-code-rules.md); see [CLAUDE.md](CLAUDE.md).
