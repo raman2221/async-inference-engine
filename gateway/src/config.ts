@@ -23,5 +23,3 @@ export const config = {
   // open a WebSocket.
   notifierPublicUrl: process.env.NOTIFIER_PUBLIC_URL ?? "ws://localhost:8081",
 };
-
-export type Config = typeof config;

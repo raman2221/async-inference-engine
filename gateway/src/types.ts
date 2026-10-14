@@ -22,16 +22,19 @@ export interface QueueMessage {
   accepted_at_ms: number;
 }
 
-// Interfaces let tests swap in in-memory fakes for RabbitMQ and Redis.
-export interface JobPublisher {
-  publish(message: QueueMessage): Promise<void>;
+export interface ReadinessProbe {
   isReady(): boolean;
 }
 
-export interface JobStore {
+// Interfaces let tests swap in in-memory fakes for RabbitMQ and Redis.
+export interface JobPublisher extends ReadinessProbe {
+  publish(message: QueueMessage): Promise<void>;
+}
+
+export interface JobStore extends ReadinessProbe {
   create(record: JobRecord, ttlSeconds: number): Promise<void>;
+  /** Resolves to null when the job never existed or its TTL expired. */
   get(jobId: string): Promise<JobRecord | null>;
   markFailed(jobId: string, error: string, ttlSeconds: number): Promise<void>;
   stats(): Promise<Record<string, string>>;
-  isReady(): boolean;
 }

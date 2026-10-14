@@ -19,8 +19,6 @@ class Prediction:
 
 
 class Model(Protocol):
-    name: str
-
     def predict(self, texts: list[str]) -> list[Prediction]: ...
 
 
@@ -37,7 +35,6 @@ class HFSentimentModel:
         if num_threads:
             torch.set_num_threads(num_threads)
         self._torch = torch
-        self.name = model_name
         self.max_length = max_length
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForSequenceClassification.from_pretrained(model_name)
@@ -65,7 +62,6 @@ class FakeModel:
     traffic for the weights) that gets shared across the batch. Used in tests
     and for running the pipeline without downloading a model."""
 
-    name = "fake"
     LABELS = {0: "NEGATIVE", 1: "POSITIVE"}
 
     def __init__(self, fixed_ms: float = 20.0, per_item_ms: float = 2.0) -> None:
@@ -85,6 +81,7 @@ def _to_predictions(probs: np.ndarray, id2label: dict[int, str]) -> list[Predict
 
 
 def load_model(backend: str, model_name: str, num_threads: int | None) -> Model:
+    """Factory: `backend` comes from the MODEL_BACKEND environment variable."""
     if backend == "fake":
         return FakeModel()
     if backend == "hf":

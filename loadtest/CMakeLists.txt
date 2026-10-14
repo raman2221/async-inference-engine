@@ -22,6 +22,17 @@ if(NOT EXISTS ${HTTPLIB_HEADER})
 endif()
 
 find_package(Threads REQUIRED)
+
+# Everything except main(), shared by the tool and its tests.
+add_library(loadtest_core STATIC src/options.cpp src/ingress.cpp src/completions.cpp src/report.cpp)
+target_include_directories(loadtest_core PUBLIC ${CMAKE_BINARY_DIR}/third_party)
+target_link_libraries(loadtest_core PUBLIC Threads::Threads)
+target_compile_options(loadtest_core PRIVATE -Wall -Wextra)
+
 add_executable(loadtest src/main.cpp)
-target_include_directories(loadtest PRIVATE ${CMAKE_BINARY_DIR}/third_party)
-target_link_libraries(loadtest PRIVATE Threads::Threads)
+target_link_libraries(loadtest PRIVATE loadtest_core)
+
+enable_testing()
+add_executable(loadtest_tests tests/unit_tests.cpp)
+target_link_libraries(loadtest_tests PRIVATE loadtest_core)
+add_test(NAME unit_tests COMMAND loadtest_tests)

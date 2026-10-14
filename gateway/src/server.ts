@@ -1,3 +1,4 @@
+import type { FastifyInstance } from "fastify";
 import { Redis } from "ioredis";
 import { buildApp } from "./app.js";
 import { config } from "./config.js";
@@ -6,7 +7,20 @@ import { RedisJobStore } from "./store.js";
 
 const log = (msg: string) => console.log(`[gateway] ${msg}`);
 
-async function main() {
+/** Docker sends SIGTERM on `compose down`: finish in-flight requests, then close connections. */
+function closeGracefullyOnSignal(app: FastifyInstance, publisher: RabbitPublisher, redis: Redis): void {
+  const shutdown = async () => {
+    log("shutting down");
+    await app.close();
+    await publisher.close();
+    redis.disconnect();
+    process.exit(0);
+  };
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
+}
+
+async function main(): Promise<void> {
   const redis = new Redis(config.redisUrl, { maxRetriesPerRequest: 2 });
   const publisher = new RabbitPublisher(
     { url: config.rabbitUrl, queueName: config.queueName, maxLength: config.queueMaxLength },
@@ -21,18 +35,7 @@ async function main() {
     maxTextLength: config.maxTextLength,
     notifierPublicUrl: config.notifierPublicUrl,
   });
-
-  // Graceful shutdown: stop accepting, let in-flight requests finish, then
-  // close broker/cache connections. Docker sends SIGTERM on `compose down`.
-  const shutdown = async () => {
-    log("shutting down");
-    await app.close();
-    await publisher.close();
-    redis.disconnect();
-    process.exit(0);
-  };
-  process.on("SIGTERM", shutdown);
-  process.on("SIGINT", shutdown);
+  closeGracefullyOnSignal(app, publisher, redis);
 
   await app.listen({ port: config.port, host: config.host });
   log(`listening on ${config.host}:${config.port}`);

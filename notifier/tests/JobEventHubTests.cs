@@ -3,33 +3,53 @@ using Xunit;
 
 public class JobEventHubTests
 {
-    private const string Done = """{"job_id":"a","status":"done","result":{"label":"POSITIVE","score":0.99}}""";
+    private const string DoneEvent = """{"job_id":"a","status":"done","result":{"label":"POSITIVE","score":0.99}}""";
 
     [Fact]
-    public async Task DeliversFinalEventToEveryWaiterForThatJob()
+    public async Task FinalEventCompletesEveryWaiterForThatJob()
     {
         var hub = new JobEventHub();
         using var first = hub.Register("a");
         using var second = hub.Register("a");
-        using var other = hub.Register("b");
 
-        hub.Dispatch(Done);
+        hub.Dispatch(DoneEvent);
 
-        Assert.Equal(Done, await first.Result);
-        Assert.Equal(Done, await second.Result);
-        Assert.False(other.Result.IsCompleted);
-        Assert.Equal(1, hub.WaitingJobs); // "a" cleaned up, "b" still waiting
+        Assert.Equal([DoneEvent, DoneEvent], [await first.Result, await second.Result]);
     }
 
     [Fact]
-    public void IgnoresNonFinalAndMalformedEvents()
+    public void FinalEventLeavesOtherJobsWaiting()
+    {
+        var hub = new JobEventHub();
+        using var other = hub.Register("b");
+
+        hub.Dispatch(DoneEvent);
+
+        Assert.False(other.Result.IsCompleted);
+    }
+
+    [Fact]
+    public void DeliveredJobIsNoLongerTracked()
     {
         var hub = new JobEventHub();
         using var waiter = hub.Register("a");
 
-        hub.Dispatch("""{"job_id":"a","status":"queued"}""");
-        hub.Dispatch("not json");
-        hub.Dispatch("""{"status":"done"}""");
+        hub.Dispatch(DoneEvent);
+
+        Assert.Equal(0, hub.WaitingJobs);
+    }
+
+    [Theory]
+    [InlineData("""{"job_id":"a","status":"queued"}""")]
+    [InlineData("""{"status":"done"}""")]
+    [InlineData("""{"job_id":"a","status":7}""")]
+    [InlineData("not json")]
+    public void NonFinalOrMalformedEventsAreIgnored(string eventJson)
+    {
+        var hub = new JobEventHub();
+        using var waiter = hub.Register("a");
+
+        hub.Dispatch(eventJson);
 
         Assert.False(waiter.Result.IsCompleted);
     }
@@ -39,7 +59,9 @@ public class JobEventHubTests
     {
         var hub = new JobEventHub();
         var waiter = hub.Register("a");
+
         waiter.Dispose();
+
         Assert.Equal(0, hub.WaitingJobs);
     }
 

@@ -6,37 +6,47 @@
 // to the notifier and print the result the moment it is pushed.
 
 const GATEWAY = process.env.GATEWAY_URL ?? "http://localhost:8080";
-const texts = process.argv.slice(2);
-if (texts.length === 0) texts.push("This project is great!", "The service was terrible.");
 
-async function infer(text) {
-  const t0 = performance.now();
-  const res = await fetch(`${GATEWAY}/v1/infer`, {
+async function submitJob(text) {
+  const response = await fetch(`${GATEWAY}/v1/infer`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ text }),
   });
-  const accepted = await res.json();
-  const ackMs = performance.now() - t0;
-  if (res.status !== 202) throw new Error(`gateway said ${res.status}: ${JSON.stringify(accepted)}`);
-
-  const result = await new Promise((resolve, reject) => {
-    const ws = new WebSocket(accepted.stream_url);
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      if (msg.status !== "queued") resolve(msg); // first frame may be the "queued" snapshot
-    };
-    ws.onerror = () => reject(new Error("websocket error"));
-  });
-
-  const totalMs = performance.now() - t0;
-  console.log(
-    `${JSON.stringify(text)}\n  202 in ${ackMs.toFixed(1)} ms -> ${result.status}` +
-      (result.result ? ` ${result.result.label} (${result.result.score})` : ` ${result.error ?? ""}`) +
-      `\n  total ${totalMs.toFixed(1)} ms, batch_size=${result.batch_size}, ` +
-      `queue_wait=${result.started_at_ms - result.accepted_at_ms} ms, ` +
-      `inference=${result.completed_at_ms - result.started_at_ms} ms`,
-  );
+  const body = await response.json();
+  if (response.status !== 202) throw new Error(`gateway answered ${response.status}: ${JSON.stringify(body)}`);
+  return body;
 }
 
-await Promise.all(texts.map(infer));
+function waitForResult(streamUrl) {
+  return new Promise((resolve, reject) => {
+    const socket = new WebSocket(streamUrl);
+    socket.onmessage = (event) => {
+      const record = JSON.parse(event.data);
+      if (record.status !== "queued") resolve(record); // the first frame may be the queued snapshot
+    };
+    socket.onerror = () => reject(new Error(`websocket error on ${streamUrl}`));
+  });
+}
+
+function describe(text, record, acceptMs, totalMs) {
+  const outcome = record.result ? `${record.result.label} (${record.result.score})` : record.error ?? "";
+  return [
+    JSON.stringify(text),
+    `  202 in ${acceptMs.toFixed(1)} ms -> ${record.status} ${outcome}`,
+    `  total ${totalMs.toFixed(1)} ms, batch_size=${record.batch_size}, ` +
+      `queue_wait=${record.started_at_ms - record.accepted_at_ms} ms, ` +
+      `inference=${record.completed_at_ms - record.started_at_ms} ms`,
+  ].join("\n");
+}
+
+async function classify(text) {
+  const start = performance.now();
+  const accepted = await submitJob(text);
+  const acceptMs = performance.now() - start;
+  const record = await waitForResult(accepted.stream_url);
+  console.log(describe(text, record, acceptMs, performance.now() - start));
+}
+
+const texts = process.argv.slice(2);
+await Promise.all((texts.length ? texts : ["This project is great!", "The service was terrible."]).map(classify));
