@@ -18,8 +18,8 @@ services:
   rabbitmq:
     image: rabbitmq:4.1-management
     ports:
-      - "5672:5672"
-      - "15672:15672" # management UI: http://localhost:15672 (guest/guest)
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672" # management UI: http://localhost:15672 (guest/guest)
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 5s
@@ -29,7 +29,7 @@ services:
   redis:
     image: redis:7.4-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 3s
@@ -39,7 +39,7 @@ services:
   gateway:
     build: ./gateway
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       <<: *common-env
       NOTIFIER_PUBLIC_URL: ws://localhost:8081
@@ -66,7 +66,7 @@ services:
   notifier:
     build: ./notifier
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     environment:
       REDIS_URL: redis:6379
     depends_on:

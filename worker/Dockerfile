@@ -7,7 +7,7 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 # CPU-only PyTorch: ~200 MB instead of ~2.5 GB with CUDA.
-RUN pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cpu
+RUN pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 

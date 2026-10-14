@@ -98,7 +98,7 @@ bash scripts/benchmark.sh 150 30 1:0 16:50 16:0
 ## Results
 
 Measured on one Windows 11 PC (Docker Desktop, 24 logical CPUs, CPU-only PyTorch with 4 threads, one
-worker). Raw output in [docs/benchmarks/](docs/benchmarks/). End-to-end latency = gateway accepted the
+worker; PyTorch 2.7 / Transformers 4.51 at the time of measurement). Raw output in [docs/benchmarks/](docs/benchmarks/). End-to-end latency = gateway accepted the
 job → result written to Redis, from 1,500 jobs sampled evenly across each 30 s run.
 
 **Ingress, 2,000 req/s for 30 s (worker running):** 60,000 / 60,000 accepted (100%), gateway latency
@@ -158,6 +158,18 @@ docker build loadtest                                         # 13 C++ tests run
 ```
 
 Code style and the cross-service naming contract are described in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Security notes
+
+This is a local development setup, not a hardened deployment:
+
+- Ports are published on `127.0.0.1` only, so RabbitMQ and Redis are not reachable from your network.
+- RabbitMQ uses its default `guest` account and Redis has no password. Set real credentials
+  (`RABBITMQ_DEFAULT_USER`/`RABBITMQ_DEFAULT_PASS`, Redis `requirepass`) before exposing anything.
+- The API and WebSocket endpoints have no authentication or rate limiting; job IDs are random UUIDs,
+  so results are only readable by someone who knows the ID.
+- The worker loads one model chosen at build time and runs with `HF_HUB_OFFLINE=1`; it never loads
+  user-supplied models.
 
 ## License
 

@@ -1,6 +1,6 @@
 aio-pika==9.5.5
 redis==5.2.1
 numpy==2.2.6
-transformers==4.51.3
+transformers==5.19.0
 # torch is installed separately in the Dockerfile from the CPU-only index
 # (the default wheel bundles ~2 GB of CUDA libraries we don't need).
