@@ -49,11 +49,8 @@
 
         <div class="scroll" id="scroll">
           <section class="welcome">
-            <div class="welcome-heading">
-              <img src="/favicon.svg" alt="" width="44" height="44" />
-              <h1>Hi, I'm Async Inference.</h1>
-            </div>
-            <p>Send me a sentence and I'll read its mood. Send a few lines and watch them share one forward pass.</p>
+            <h1>Read the mood of <span class="highlight"><span class="highlight-dot"></span>anything</span>.</h1>
+            <p>Send a sentence and get its sentiment, plus a trace of how the pipeline handled it.</p>
           </section>
 
           <div class="threads" id="threads" aria-live="polite"></div>
@@ -93,10 +90,6 @@
           <p class="footnote">DistilBERT on CPU · reads sentiment only, and can be wrong · <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line</p>
         </div>
 
-        <svg class="hills" viewBox="0 0 1440 220" preserveAspectRatio="none" aria-hidden="true">
-          <path class="hill-back" d="M0 120 C 260 50 470 80 700 110 S 1150 40 1440 90 L1440 220 L0 220 Z" />
-          <path class="hill-front" d="M0 170 C 330 120 640 175 960 150 S 1300 140 1440 160 L1440 220 L0 220 Z" />
-        </svg>
       </div>
     </div>
 
