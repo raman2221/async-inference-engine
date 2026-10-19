@@ -1,4 +1,4 @@
-import type { AcceptedJob, ClientResult, JobRecord, RawWorkerStats, Readiness } from "./types";
+import type { AcceptedJob, ClientResult, JobRecord } from "./types";
 
 /** The gateway or notifier could not be reached, or refused the request. */
 export class EngineUnavailableError extends Error {}
@@ -52,14 +52,6 @@ export class InferenceClient {
       socket.onerror = () => reject(new EngineUnavailableError("could not reach the notifier"));
       socket.onclose = () => reject(new JobNotFinishedError(`stream for job ${jobId} closed early`));
     });
-  }
-
-  async fetchStats(): Promise<RawWorkerStats> {
-    return (await this.request("/api/v1/stats")).json();
-  }
-
-  async fetchReadiness(): Promise<Readiness> {
-    return (await this.request("/api/readyz")).json();
   }
 
   private streamUrl(jobId: string): string {

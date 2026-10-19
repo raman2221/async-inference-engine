@@ -21,14 +21,6 @@ export interface AcceptedJob {
   stream_url: string;
 }
 
-/** Raw HGETALL of the worker's Redis stats hash: every value is a string. */
-export type RawWorkerStats = Record<string, string>;
-
-export interface Readiness {
-  queue: boolean;
-  store: boolean;
-}
-
 /** A finished job plus what the browser measured around it. */
 export interface ClientResult {
   record: JobRecord;

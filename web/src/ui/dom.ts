@@ -20,11 +20,3 @@ export function create<K extends keyof HTMLElementTagNameMap>(
   return element;
 }
 
-/** Runs `task` now and then every `intervalMs`, skipping ticks while the tab is hidden. */
-export function repeatEvery(intervalMs: number, task: () => Promise<void>): void {
-  const tick = async () => {
-    if (!document.hidden) await task().catch(() => {});
-    setTimeout(tick, intervalMs);
-  };
-  void tick();
-}

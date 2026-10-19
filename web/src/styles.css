@@ -229,28 +229,6 @@ button {
   font-size: 12px;
 }
 
-.status {
-  color: var(--gray-600);
-}
-
-.status::before {
-  content: "";
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: 8px;
-  border-radius: var(--radius-round);
-  background: var(--gray-400);
-}
-
-.status[data-state="online"]::before {
-  background: var(--green-500);
-}
-
-.status[data-state="offline"]::before {
-  background: var(--red-500);
-}
-
 .sidebar-link {
   color: var(--gray-500);
   text-decoration: none;
