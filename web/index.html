@@ -11,38 +11,71 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div class="app">
-      <header class="topbar">
-        <div class="model">
-          <img src="/favicon.svg" alt="" width="22" height="22" />
-          <span>Async Inference</span>
-          <span class="model-tag">DistilBERT · sentiment</span>
-        </div>
-        <div class="topbar-actions">
-          <span class="status" id="engine-status" data-state="checking">Checking…</span>
-          <a class="icon-button" href="https://github.com/raman2221/async-inference-engine" target="_blank" rel="noreferrer" aria-label="Source code on GitHub">
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.56 9.56 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2z" /></svg>
+    <div class="app" id="app" data-sidebar="open">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-top">
+          <a class="brand" href="/">
+            <img src="/favicon.svg" alt="" width="28" height="28" />
+            <span>Async Inference</span>
           </a>
-          <button class="icon-button" id="new-chat" type="button" aria-label="New chat" title="New chat">
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 20h4l10.5-10.5-4-4L4 16v4zM13.5 7.5l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <button class="icon-button" id="collapse-sidebar" type="button" aria-label="Close sidebar" title="Close sidebar">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3" /><path d="M9.5 4.5v15" /></svg>
           </button>
         </div>
-      </header>
 
-      <main class="main" id="main" data-empty="true">
-        <section class="welcome" id="welcome">
-          <h1>What should I read the mood of?</h1>
-        </section>
+        <button class="new-chat" id="new-chat" type="button">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+          New chat
+        </button>
 
-        <div class="thread" id="thread" aria-live="polite"></div>
+        <nav class="history" aria-label="Chats">
+          <p class="history-label">Today</p>
+          <ul class="history-list" id="history-list"></ul>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <span class="status" id="engine-status" data-state="checking">Checking engine…</span>
+          <a class="sidebar-link" href="https://github.com/raman2221/async-inference-engine" target="_blank" rel="noreferrer">View source on GitHub</a>
+        </div>
+      </aside>
+
+      <div class="main" id="main" data-empty="true">
+        <div class="main-bar">
+          <button class="icon-button" id="open-sidebar" type="button" aria-label="Open sidebar" title="Open sidebar">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3" /><path d="M9.5 4.5v15" /></svg>
+          </button>
+          <span class="main-title" id="main-title">New chat</span>
+        </div>
+
+        <div class="scroll" id="scroll">
+          <section class="welcome">
+            <div class="welcome-heading">
+              <img src="/favicon.svg" alt="" width="44" height="44" />
+              <h1>Hi, I'm Async Inference.</h1>
+            </div>
+            <p>Send me a sentence and I'll read its mood. Send a few lines and watch them share one forward pass.</p>
+          </section>
+
+          <div class="threads" id="threads" aria-live="polite"></div>
+        </div>
 
         <div class="composer-area">
           <form class="composer" id="composer">
             <label class="visually-hidden" for="composer-input">Message</label>
-            <textarea id="composer-input" rows="1" maxlength="2000" placeholder="Message the engine…"></textarea>
-            <button class="send" id="send-button" type="submit" aria-label="Send" disabled>
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-            </button>
+            <textarea id="composer-input" rows="2" maxlength="2000" placeholder="Message Async Inference"></textarea>
+            <div class="composer-row">
+              <button class="toggle" id="toggle-trace" type="button" aria-pressed="true" title="Show each request's path through the pipeline">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="13" r="7.5" /><path d="M12 9.5V13l2.5 1.5M10 3h4" /></svg>
+                Trace
+              </button>
+              <button class="toggle" id="toggle-batch" type="button" aria-pressed="true" title="Send each line as its own request">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1.5" /><rect x="14" y="4" width="6" height="6" rx="1.5" /><rect x="4" y="14" width="6" height="6" rx="1.5" /><rect x="14" y="14" width="6" height="6" rx="1.5" /></svg>
+                Batch lines
+              </button>
+              <button class="send" id="send-button" type="submit" aria-label="Send" disabled>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" /></svg>
+              </button>
+            </div>
           </form>
 
           <div class="suggestions" id="suggestions">
@@ -53,16 +86,18 @@
               class="suggestion"
               data-text="I loved every minute of it.&#10;Worst customer service ever.&#10;The food arrived hot and fresh.&#10;It stopped working after two days.&#10;Honestly better than I expected."
             >
-              📦 Five at once (batched)
+              📦 Five lines at once
             </button>
           </div>
 
-          <p class="footnote">
-            Each line is its own request. Lines sent together can share one forward pass.
-            <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line.
-          </p>
+          <p class="footnote">DistilBERT on CPU · reads sentiment only, and can be wrong · <kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line</p>
         </div>
-      </main>
+
+        <svg class="hills" viewBox="0 0 1440 220" preserveAspectRatio="none" aria-hidden="true">
+          <path class="hill-back" d="M0 120 C 260 50 470 80 700 110 S 1150 40 1440 90 L1440 220 L0 220 Z" />
+          <path class="hill-front" d="M0 170 C 330 120 640 175 960 150 S 1300 140 1440 160 L1440 220 L0 220 Z" />
+        </svg>
+      </div>
     </div>
 
     <script type="module" src="/src/main.ts"></script>

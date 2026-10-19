@@ -1,7 +1,16 @@
 /** Most lines one message may fan out into; matches the worker's largest batch times two. */
 export const MAX_LINES_PER_MESSAGE = 32;
 
-/** Each non-empty line of a message becomes its own inference request. */
+/**
+ * Turns a message into inference requests. With line batching on, every
+ * non-empty line is its own request; with it off, the message is one request.
+ */
+export function toRequests(message: string, splitLines: boolean): string[] {
+  if (splitLines) return splitIntoRequests(message);
+  const whole = message.replace(/\s*\n\s*/g, " ").trim();
+  return whole ? [whole] : [];
+}
+
 export function splitIntoRequests(message: string): string[] {
   return message
     .split("\n")

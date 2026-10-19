@@ -1,17 +1,27 @@
 import { byId } from "./dom";
 
-const MAX_HEIGHT_PX = 200;
+const MAX_HEIGHT_PX = 220;
+
+export interface SendOptions {
+  /** Show the "Traced in N ms" block above each answer. */
+  trace: boolean;
+  /** Send every line as its own request. */
+  splitLines: boolean;
+}
 
 export interface Composer {
   setBusy(busy: boolean): void;
   focus(): void;
+  options(): SendOptions;
 }
 
-/** The message box: grows with its text, sends on Enter, and fills from suggestion chips. */
+/** The message card: grows with its text, sends on Enter, and owns the Trace and Batch toggles. */
 export function mountComposer(onSend: (message: string) => void): Composer {
   const form = byId<HTMLFormElement>("composer");
   const input = byId<HTMLTextAreaElement>("composer-input");
   const sendButton = byId<HTMLButtonElement>("send-button");
+  const trace = byId<HTMLButtonElement>("toggle-trace");
+  const batch = byId<HTMLButtonElement>("toggle-batch");
   let busy = false;
 
   const refresh = () => {
@@ -31,6 +41,7 @@ export function mountComposer(onSend: (message: string) => void): Composer {
     event.preventDefault();
     send();
   });
+  [trace, batch].forEach(makeToggle);
   wireSuggestions(input, () => {
     refresh();
     send();
@@ -42,7 +53,16 @@ export function mountComposer(onSend: (message: string) => void): Composer {
       refresh();
     },
     focus: () => input.focus(),
+    options: () => ({ trace: isPressed(trace), splitLines: isPressed(batch) }),
   };
+}
+
+function makeToggle(button: HTMLButtonElement): void {
+  button.addEventListener("click", () => button.setAttribute("aria-pressed", String(!isPressed(button))));
+}
+
+function isPressed(button: HTMLButtonElement): boolean {
+  return button.getAttribute("aria-pressed") === "true";
 }
 
 function sendOnEnter(event: KeyboardEvent, send: () => void): void {

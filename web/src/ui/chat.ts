@@ -1,29 +1,40 @@
 import type { InferenceClient } from "../api/client";
-import { splitIntoRequests } from "../lib/prompt";
-import type { Composer } from "./composer";
-import type { LineOutcome, Thread } from "./thread";
+import { toRequests } from "../lib/prompt";
+import type { Composer, SendOptions } from "./composer";
+import type { LineOutcome } from "./replyView";
+import type { Sessions } from "./sessions";
+import type { Thread } from "./thread";
 
 /**
- * One message in, one reply out. Every line becomes its own request, all sent
- * at once, so lines in the same message can land in the same batch.
+ * One message in, one reply out. With line batching on, every line becomes its
+ * own request and all are sent at once, so they can land in the same batch.
  */
 export class Chat {
   constructor(
     private readonly client: InferenceClient,
-    private readonly thread: Thread,
+    private readonly sessions: Sessions,
+    private readonly composer: Composer,
   ) {}
 
-  async send(message: string, composer: Composer): Promise<void> {
-    const lines = splitIntoRequests(message);
-    if (lines.length === 0) return;
-    this.thread.addUserMessage(lines.join("\n"));
-    const reply = this.thread.addPendingReply();
-    composer.setBusy(true);
+  async send(message: string): Promise<void> {
+    const options = this.composer.options();
+    const requests = toRequests(message, options.splitLines);
+    if (requests.length === 0) return;
+    const shown = requests.join("\n");
+    const thread = this.sessions.threadFor(shown);
+    thread.addUserMessage(shown);
+    await this.answer(thread, requests, options);
+  }
+
+  private async answer(thread: Thread, requests: string[], options: SendOptions): Promise<void> {
+    const reply = thread.addPendingReply();
+    this.composer.setBusy(true);
     try {
-      reply.show(await this.classifyAll(lines));
+      const outcomes = await this.classifyAll(requests);
+      reply.show(outcomes, { trace: options.trace, onRegenerate: () => void this.answer(thread, requests, options) });
     } finally {
-      composer.setBusy(false);
-      composer.focus();
+      this.composer.setBusy(false);
+      this.composer.focus();
     }
   }
 

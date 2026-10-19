@@ -14,7 +14,7 @@ Four languages, each where it fits best:
 | `worker/` | **Python** (asyncio, PyTorch, Transformers) | Dynamic batcher + model inference |
 | `notifier/` | **C#** (.NET 10, ASP.NET Core) | WebSocket result delivery, one Redis subscription fanned out in memory |
 | `loadtest/` | **C++20** (cpp-httplib) | Open-loop load generator for stress tests and benchmarks |
-| `web/` | **TypeScript** (Vite, no framework) + nginx | Chat-style web app at http://localhost:3000 |
+| `web/` | **TypeScript** (Vite, no framework) + nginx | Chat web app at http://localhost:3000 (sidebar, per-request pipeline trace) |
 
 Infrastructure: **RabbitMQ** (durable work queue), **Redis** (result store + pub/sub),
 **Docker Compose** (runs all of it).
