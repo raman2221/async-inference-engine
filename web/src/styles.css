@@ -344,22 +344,13 @@ button {
   letter-spacing: -0.04em;
 }
 
-/* The "• Think" pill from Notion's homepage. */
+/* Light-blue highlight pill, as on Notion's homepage. */
 .highlight {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 20px 4px 16px;
+  padding: 0 20px 4px;
   border-radius: var(--radius-round);
   background: var(--blue-200);
-}
-
-.highlight-dot {
-  width: 0.36em;
-  height: 0.36em;
-  margin-top: 4px;
-  border-radius: var(--radius-round);
-  background: var(--blue-600);
 }
 
 .welcome p {
