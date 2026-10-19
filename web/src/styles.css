@@ -1,0 +1,505 @@
+/* ---------- Design tokens (light, then dark) ---------- */
+:root {
+  --bg: #ffffff;
+  --surface: #f4f4f4;
+  --surface-hover: #ececec;
+  --border: #e5e5e5;
+  --text: #0d0d0d;
+  --text-soft: #5d5d5d;
+  --text-faint: #8f8f8f;
+  --send-bg: #0d0d0d;
+  --send-text: #ffffff;
+  --positive-bg: #dcfce7;
+  --positive-text: #166534;
+  --negative-bg: #fee2e2;
+  --negative-text: #991b1b;
+  --online: #10a37f;
+  --offline: #ef4444;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #212121;
+    --surface: #303030;
+    --surface-hover: #3a3a3a;
+    --border: #3d3d3d;
+    --text: #ececec;
+    --text-soft: #b4b4b4;
+    --text-faint: #8a8a8a;
+    --send-bg: #ececec;
+    --send-text: #0d0d0d;
+    --positive-bg: rgba(34, 197, 94, 0.16);
+    --positive-text: #86efac;
+    --negative-bg: rgba(239, 68, 68, 0.16);
+    --negative-text: #fca5a5;
+    --shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+    color-scheme: dark;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+/* ---------- Layout ---------- */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+}
+
+.model {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.model-tag {
+  color: var(--text-faint);
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status {
+  margin-right: 8px;
+  color: var(--text-soft);
+  font-size: 13px;
+}
+
+.status::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  vertical-align: 1px;
+}
+
+.status[data-state="online"]::before {
+  background: var(--online);
+}
+
+.status[data-state="offline"]::before {
+  background: var(--offline);
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.icon-button svg {
+  fill: currentColor;
+}
+
+.icon-button svg path[fill="none"] {
+  fill: none;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Empty chat: heading and composer sit together in the middle, like a fresh ChatGPT chat. */
+.main[data-empty="true"] {
+  justify-content: center;
+  padding-bottom: 12vh;
+}
+
+.main[data-empty="false"] .welcome,
+.main[data-empty="false"] .suggestions {
+  display: none;
+}
+
+.welcome h1 {
+  margin: 0 0 28px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Conversation ---------- */
+.thread {
+  width: 100%;
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.main[data-empty="false"] .thread {
+  flex: 1;
+  padding-top: 24px;
+}
+
+.message {
+  margin-bottom: 28px;
+  animation: appear 0.25s ease both;
+}
+
+.message.user {
+  width: fit-content;
+  max-width: 75%;
+  margin-left: auto;
+  padding: 10px 18px;
+  border-radius: 22px;
+  background: var(--surface);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.message.assistant {
+  display: flex;
+  gap: 14px;
+}
+
+.avatar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-top: 2px;
+}
+
+.reply-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.reply-body p {
+  margin: 0;
+}
+
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pill {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pill.positive {
+  background: var(--positive-bg);
+  color: var(--positive-text);
+}
+
+.pill.negative,
+.pill.failed {
+  background: var(--negative-bg);
+  color: var(--negative-text);
+}
+
+.confidence {
+  color: var(--text-soft);
+}
+
+.headline {
+  font-weight: 600;
+}
+
+.note {
+  margin-top: 6px !important;
+  color: var(--text-soft);
+  font-size: 14px;
+}
+
+.error {
+  color: var(--negative-text);
+}
+
+.lines {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.lines li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.lines .pill {
+  flex: none;
+  min-width: 82px;
+  text-align: center;
+}
+
+.line-text {
+  overflow-wrap: anywhere;
+}
+
+.timing {
+  margin-top: 10px;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+.timing summary {
+  width: fit-content;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 2px 6px;
+  margin-left: -6px;
+}
+
+.timing summary:hover {
+  background: var(--surface);
+}
+
+.timing-row {
+  display: flex;
+  justify-content: space-between;
+  max-width: 300px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.timing-ms {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.typing {
+  display: flex;
+  gap: 5px;
+  padding: 10px 0;
+}
+
+.typing span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  animation: bounce 1.2s ease-in-out infinite;
+}
+
+.typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* ---------- Composer ---------- */
+.composer-area {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  max-width: 768px;
+  margin: 0 auto;
+  padding: 0 20px 10px;
+  background: linear-gradient(to bottom, transparent, var(--bg) 18px);
+}
+
+.composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 10px 10px 10px 20px;
+  border-radius: 28px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+@media (prefers-color-scheme: dark) {
+  .composer {
+    background: var(--surface);
+  }
+}
+
+.composer textarea {
+  flex: 1;
+  max-height: 200px;
+  padding: 7px 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+
+.composer textarea::placeholder {
+  color: var(--text-faint);
+}
+
+.send {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--send-bg);
+  color: var(--send-text);
+  cursor: pointer;
+}
+
+.send:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.suggestion {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.suggestion:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.footnote {
+  margin: 10px 0 0;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+kbd {
+  padding: 0 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+/* ---------- Motion ---------- */
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes bounce {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 600px) {
+  .model-tag,
+  .status {
+    display: none;
+  }
+
+  .welcome h1 {
+    font-size: 23px;
+  }
+
+  .message.user {
+    max-width: 88%;
+  }
+
+  .footnote {
+    display: none;
+  }
+}

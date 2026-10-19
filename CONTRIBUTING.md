@@ -41,5 +41,6 @@ rejects the second declaration with `PRECONDITION_FAILED`.
 cd gateway  && npm run build && npm test
 cd worker   && python -m pytest
 cd notifier && dotnet test
+cd web      && npm test && npm run build
 docker compose up --build -d && node scripts/demo.mjs   # end-to-end check
 ```

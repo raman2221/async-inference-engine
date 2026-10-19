@@ -14,6 +14,7 @@ Four languages, each where it fits best:
 | `worker/` | **Python** (asyncio, PyTorch, Transformers) | Dynamic batcher + model inference |
 | `notifier/` | **C#** (.NET 10, ASP.NET Core) | WebSocket result delivery, one Redis subscription fanned out in memory |
 | `loadtest/` | **C++20** (cpp-httplib) | Open-loop load generator for stress tests and benchmarks |
+| `web/` | **TypeScript** (Vite, no framework) + nginx | Chat-style web app at http://localhost:3000 |
 
 Infrastructure: **RabbitMQ** (durable work queue), **Redis** (result store + pub/sub),
 **Docker Compose** (runs all of it).
@@ -43,7 +44,15 @@ Infrastructure: **RabbitMQ** (durable work queue), **Redis** (result store + pub
 Requires Docker Desktop.
 
 ```bash
-docker compose up --build -d          # rabbitmq, redis, gateway, worker, notifier
+docker compose up --build -d          # rabbitmq, redis, gateway, worker, notifier, web
+```
+
+Then open **http://localhost:3000** and chat with the engine. Put several sentences on separate
+lines (Shift + Enter) to send them at once; the reply shows how many forward passes they took.
+
+Or from the terminal:
+
+```bash
 node scripts/demo.mjs "I loved it" "terrible service"
 ```
 
@@ -154,6 +163,7 @@ What the numbers say:
 cd gateway  && npm install && npm test                        # 15 tests (Vitest, app.inject with fakes)
 cd worker   && pip install -r requirements-dev.txt && pytest  # 22 tests (batcher, processor, jobs, worker)
 cd notifier && dotnet test                                    # 16 tests (xUnit, in-memory WebSocket server)
+cd web      && npm install && npm test                        # 19 tests (Vitest, pure view logic)
 docker build loadtest                                         # 13 C++ tests run during the image build
 ```
 

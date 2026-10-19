@@ -73,6 +73,17 @@ services:
       redis: { condition: service_healthy }
     restart: unless-stopped
 
+  # Website: http://localhost:3000. nginx serves the static site and proxies
+  # /api to the gateway and /ws to the notifier, so the browser stays same-origin.
+  web:
+    build: ./web
+    ports:
+      - "127.0.0.1:3000:80"
+    depends_on:
+      - gateway
+      - notifier
+    restart: unless-stopped
+
   # Not started by `up`; run on demand with `docker compose run --rm loadtest ...`
   loadtest:
     build: ./loadtest
